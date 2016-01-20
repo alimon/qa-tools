@@ -21,11 +21,14 @@ Portions created by Will Woods are Copyright (C) 2008 Red Hat.
 All Rights Reserved.
 Portions created by Bill Peck are Copyright (C) 2008 Red Hat.
 All Rights Reserved.
+Portions created by Anibal Limon are Copyright (C) 2016 Intel Corporation.
+All Rights Reserved.
 
 Contributor(s): Airald Hapairai
   David Malcolm <dmalcolm@redhat.com>
   Will Woods <wwoods@redhat.com>
   Bill Peck <bpeck@redhat.com>
+  Anibal Limon <anibal.limon@intel.com>
 
 The CookieTransport class is by Will Woods, based on code in
 Python's xmlrpclib.Transport, which has this copyright notice:
@@ -70,12 +73,12 @@ where config.cfg looks like:
 [testopia]
 username: jdoe@mycompany.com
 password: jdoepassword
-url:      https://myhost.mycompany.com/bugzilla/tr_xmlrpc.cgi
+url:      https://myhost.mycompany.com/bugzilla/xmlrpc.cgi
 
 Or, more directly:
 t = Testopia('jdoe@mycompany.com',
              'jdoepassword',
-             'https://myhost.mycompany.com/bugzilla/tr_xmlrpc.cgi')             
+             'https://myhost.mycompany.com/bugzilla/xmlrpc.cgi')
 t.testplan_get(10)
 
 though this means you've embedded your login credentials in the source file.
@@ -88,8 +91,8 @@ arguments. I've done this here with list, create, and update just to help.
 """
 
 __author__="Airald Hapairai"
-__date__="06/23/2008"
-__version__="0.2.0.0"
+__date__="20/01/2016"
+__version__="0.3.0.0"
 
 import ssl
 import os
