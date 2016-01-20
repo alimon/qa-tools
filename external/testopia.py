@@ -92,17 +92,6 @@ __date__="06/23/2008"
 __version__="0.2.0.0"
 
 import ssl
-
-try:
-    _create_unverified_https_context = ssl._create_unverified_context
-except AttributeError:
-    # Legacy Python that doesn't verify HTTPS certificates by default
-    pass
-else:
-    # Handle target environment that doesn't support HTTPS verification
-    ssl._create_default_https_context = _create_unverified_https_context
-
-
 import xmlrpclib, urllib2
 import cookielib
 from urlparse import urlparse
@@ -131,14 +120,16 @@ class Urllib2Transport(xmlrpclib.Transport):
         return self.parse_response(response)
 
 class ProxyTransport(Urllib2Transport):
-    def __init__(self, url, proxies=None, use_datetime=0):
+    def __init__(self, url, sslverify, proxies=None, use_datetime=0):
         self.url = url
         self.cj = cookielib.CookieJar()
+
+        handlers = [urllib2.HTTPCookieProcessor(self.cj)]
         if proxies:
-            opener = urllib2.build_opener(urllib2.ProxyHandler(proxies),
-                        urllib2.HTTPCookieProcessor(self.cj))
-        else:
-            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
+            handlers.append(urllib2.ProxyHandler(proxies)),
+        if not sslverify and hasattr(ssl, '_create_unverified_context'):
+            handlers.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
+        opener = urllib2.build_opener(*handlers)
 
         Urllib2Transport.__init__(self, opener, use_datetime)
 
@@ -187,7 +178,7 @@ class Testopia(object):
                        for key in ['username', 'password', 'url']])
         return Testopia(**kwargs)
     
-    def __init__(self, username, password, url):
+    def __init__(self, username, password, url, sslverify=True):
         """Initialize the Testopia driver.
 
         'username' -- string, the account to log into Testopia such as jdoe@mycompany.com,
@@ -199,9 +190,9 @@ class Testopia(object):
                               'https://myhost.mycompany.com/bugzilla/tr_xmlrpc.cgi')
         """
         if url.startswith('https://'):
-            self._transport = ProxyTransport(url)
+            self._transport = ProxyTransport(url, sslverify)
         elif url.startswith('http://'):
-            self._transport = ProxyTransport(url)
+            self._transport = ProxyTransport(url, sslverify)
         else:
             raise "Unrecognized URL scheme"
         # print "COOKIES:", self._transport.cookiejar._cookies
