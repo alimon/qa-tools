@@ -92,6 +92,7 @@ __date__="06/23/2008"
 __version__="0.2.0.0"
 
 import ssl
+import os
 import xmlrpclib, urllib2
 import cookielib
 from urlparse import urlparse
@@ -119,18 +120,29 @@ class Urllib2Transport(xmlrpclib.Transport):
         return self.parse_response(response)
 
 class ProxyTransport(Urllib2Transport):
-    def __init__(self, url, sslverify, proxies=None, use_datetime=0):
+    def __init__(self, url, sslverify, proxies=False, use_datetime=0):
         self.url = url
         self.cj = cookielib.CookieJar()
 
         handlers = [urllib2.HTTPCookieProcessor(self.cj)]
         if proxies:
-            handlers.append(urllib2.ProxyHandler(proxies)),
+            handlers.append(urllib2.ProxyHandler()),
         if not sslverify and hasattr(ssl, '_create_unverified_context'):
             handlers.append(urllib2.HTTPSHandler(context=ssl._create_unverified_context()))
         opener = urllib2.build_opener(*handlers)
 
         Urllib2Transport.__init__(self, opener, use_datetime)
+
+def proxies_in_env():
+    exported = False
+    variables = ['http_proxy', 'HTTP_PROXY', 'https_proxy', 'HTTPS_PROXY']
+
+    for v in variables:
+        if v in os.environ.keys():
+            exported = True
+            break
+
+    return exported
 
 VERBOSE=0
 DEBUG=0
@@ -189,9 +201,11 @@ class Testopia(object):
                               'https://myhost.mycompany.com/bugzilla/tr_xmlrpc.cgi')
         """
         if url.startswith('https://'):
-            self._transport = ProxyTransport(url, sslverify)
+            self._transport = ProxyTransport(url, sslverify,
+                    proxies=proxies_in_env())
         elif url.startswith('http://'):
-            self._transport = ProxyTransport(url, sslverify)
+            self._transport = ProxyTransport(url, sslverify,
+                    proxies=proxies_in_env())
         else:
             raise "Unrecognized URL scheme"
         # print "COOKIES:", self._transport.cookiejar._cookies
