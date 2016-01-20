@@ -103,7 +103,6 @@ class Urllib2Transport(xmlrpclib.Transport):
     def __init__(self, opener=None, https=False, use_datetime=0):
         xmlrpclib.Transport.__init__(self, use_datetime)
         self.opener = opener or urllib2.build_opener()
-        self.https = https
 
     def request(self, host, handler, request_body, verbose=0):
         self.verbose = verbose
