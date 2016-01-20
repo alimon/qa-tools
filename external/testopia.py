@@ -104,152 +104,43 @@ else:
 
 
 import xmlrpclib, urllib2
+import cookielib
+from urlparse import urlparse
+
 from types import *
 from datetime import datetime, time
 
-from cookielib import CookieJar
+class Urllib2Transport(xmlrpclib.Transport):
+    def __init__(self, opener=None, https=False, use_datetime=0):
+        xmlrpclib.Transport.__init__(self, use_datetime)
+        self.opener = opener or urllib2.build_opener()
+        self.https = https
 
-class CookieResponse:
-    '''Fake HTTPResponse object that we can fill with headers we got elsewhere.
-    We can then pass it to CookieJar.extract_cookies() to make it pull out the
-    cookies from the set of headers we have.'''
-    def __init__(self,headers): 
-        self.headers = headers
-    def info(self): 
-        return self.headers
-
-class CookieTransport(xmlrpclib.Transport):
-    '''A subclass of xmlrpclib.Transport that supports cookies.'''
-    cookiejar = None
-    scheme = 'http'
-
-    # Cribbed from xmlrpclib.Transport.send_user_agent 
-    def send_cookies(self, connection, cookie_request):
-        if self.cookiejar is None:
-            self.cookiejar = cookielib.CookieJar()
-        elif self.cookiejar:
-            # Let the cookiejar figure out what cookies are appropriate
-            self.cookiejar.add_cookie_header(cookie_request)
-            # Pull the cookie headers out of the request object...
-            cookielist=list()
-            for h,v in cookie_request.header_items():
-                if h.startswith('Cookie'):
-                    cookielist.append([h,v])
-            # ...and put them over the connection
-            for h,v in cookielist:
-                connection.putheader(h,v)
-
-    # This is the same request() method from python 2.6's xmlrpclib.Transport,
-    # with a couple additions noted below
-    def request_with_cookies(self, host, handler, request_body, verbose=0):
-        h = self.make_connection(host)
-        if verbose:
-            h.set_debuglevel(1)
-
-        # ADDED: construct the URL and Request object for proper cookie handling
-        request_url = "%s://%s%s" % (self.scheme,host,handler)
-        cookie_request  = urllib2.Request(request_url) 
-
-        self.send_request(h,handler,request_body)
-        self.send_host(h,host) 
-        self.send_cookies(h,cookie_request) # ADDED. creates cookiejar if None.
-        self.send_user_agent(h)
-        self.send_content(h,request_body)
-
-        errcode, errmsg, headers = h.getreply()
-
-        # ADDED: parse headers and get cookies here
-        cookie_response = CookieResponse(headers)
-        # Okay, extract the cookies from the headers
-        self.cookiejar.extract_cookies(cookie_response,cookie_request)
-        # And write back any changes
-        if hasattr(self.cookiejar,'save'):
-            try:
-                self.cookiejar.save(self.cookiejar.filename)
-            except Exception, e:
-                raise e
-
-        if errcode != 200:
-            raise xmlrpclib.ProtocolError(
-                host + handler,
-                errcode, errmsg,
-                headers
-                )
-
+    def request(self, host, handler, request_body, verbose=0):
         self.verbose = verbose
 
-        try:
-            sock = h._conn.sock
-        except AttributeError:
-            sock = None
+        proto = urlparse(self.url).scheme
+        request_uri = '%s://%s%s' % (proto, host, handler)
+        req = urllib2.Request(request_uri, request_body)
+        req.add_header('Content-Type', 'text/xml')
+        req.add_header('Content-Length', len(request_body))
+        req.add_header('User-agent', self.user_agent)
 
-        return self._parse_response(h.getfile(), sock)
+        response = self.opener.open(req)
 
-    # This is just python 2.7's xmlrpclib.Transport.single_request, with
-    # send additions noted below to send cookies along with the request
-    def single_request_with_cookies(self, host, handler, request_body, verbose=0):
-        h = self.make_connection(host)
-        if verbose:
-            h.set_debuglevel(1)
+        return self.parse_response(response)
 
-        # ADDED: construct the URL and Request object for proper cookie handling
-        request_url = "%s://%s%s" % (self.scheme,host,handler)
-        cookie_request  = urllib2.Request(request_url)
+class ProxyTransport(Urllib2Transport):
+    def __init__(self, url, proxies=None, use_datetime=0):
+        self.url = url
+        self.cj = cookielib.CookieJar()
+        if proxies:
+            opener = urllib2.build_opener(urllib2.ProxyHandler(proxies),
+                        urllib2.HTTPCookieProcessor(self.cj))
+        else:
+            opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(self.cj))
 
-        try:
-            self.send_request(h,handler,request_body)
-            self.send_host(h,host)
-            self.send_cookies(h,cookie_request) # ADDED. creates cookiejar if None.
-            self.send_user_agent(h)
-            self.send_content(h,request_body)
-
-            response = h.getresponse(buffering=True)
-
-            # ADDED: parse headers and get cookies here
-            cookie_response = CookieResponse(response.msg)
-            # Okay, extract the cookies from the headers
-            self.cookiejar.extract_cookies(cookie_response,cookie_request)
-            # And write back any changes
-            if hasattr(self.cookiejar,'save'):
-                try:
-                    self.cookiejar.save(self.cookiejar.filename)
-                except Exception, e:
-                    raise e
-
-            if response.status == 200:
-                self.verbose = verbose
-                return self.parse_response(response)
-        except xmlrpclib.Fault:
-            raise
-        except Exception:
-            # All unexpected errors leave connection in
-            # a strange state, so we clear it.
-            self.close()
-            raise
-
-        #discard any response data and raise exception
-        if (response.getheader("content-length", 0)):
-            response.read()
-        raise xmlrpclib.ProtocolError(
-            host + handler,
-            response.status, response.reason,
-            response.msg,
-            )
-
-    # Override the appropriate request method
-    if hasattr(xmlrpclib.Transport, 'single_request'):
-        single_request = single_request_with_cookies # python 2.7+
-    else:
-        request = request_with_cookies # python 2.6 and earlier
-
-class SafeCookieTransport(xmlrpclib.SafeTransport,CookieTransport):
-    '''SafeTransport subclass that supports cookies.'''
-    scheme = 'https'
-    # Override the appropriate request method
-    if hasattr(xmlrpclib.Transport, 'single_request'):
-        single_request = CookieTransport.single_request_with_cookies # python 2.7+
-    else:
-        request = CookieTransport.request_with_cookies # python 2.6 and earlier
+        Urllib2Transport.__init__(self, opener, use_datetime)
 
 VERBOSE=0
 DEBUG=0
@@ -308,12 +199,11 @@ class Testopia(object):
                               'https://myhost.mycompany.com/bugzilla/tr_xmlrpc.cgi')
         """
         if url.startswith('https://'):
-            self._transport = SafeCookieTransport()
+            self._transport = ProxyTransport(url)
         elif url.startswith('http://'):
-            self._transport = CookieTransport()
+            self._transport = ProxyTransport(url)
         else:
             raise "Unrecognized URL scheme"
-        self._transport.cookiejar = CookieJar()
         # print "COOKIES:", self._transport.cookiejar._cookies
         self.server = xmlrpclib.ServerProxy(url,
                                             transport = self._transport,
