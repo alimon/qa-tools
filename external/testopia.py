@@ -642,6 +642,29 @@ class Testopia(object):
         return self.do_command("Product.get_milestones", [self._number_noop(product_id)])
 
 
+    def product_get_environments(self, product_id):
+        """Get a list of environments for the given Product.
+
+        'product_id' -- int,
+
+        Example: product_get_environments(10)
+
+        Result: A list of Environments dictionaries
+        """
+        return self.do_command("TestopiaProduct.get_environments", [self._number_noop(product_id)])
+
+    def product_get_builds(self, product_id):
+        """Get A List of Builds For An Existing Product.
+
+       o'product_id' -- integer, Must be greater than 0
+
+        Example: product_get_builds(10)
+
+        Result: A list of Build objects on success
+        """
+        return self.do_command("TestopiaProduct.get_builds", [self._number_noop(product_id)])
+
+
     ############################## Tag #######################################
 
 
