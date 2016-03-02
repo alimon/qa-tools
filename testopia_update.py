@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import argparse
 import logging
@@ -7,6 +8,8 @@ import ConfigParser
 import types
 
 from external.testopia import Testopia
+
+DEFAULT_CONFIG_FILE = "testopia_update.config"
 
 class Options(object):
     pass
@@ -56,8 +59,12 @@ if __name__ == '__main__':
         logging.basicConfig(stream=sys.stderr)
     logger = logging.getLogger()
 
-    config = None
     testopia_opts = ['url', 'username', 'password']
+
+    config = None
+    if not args.config and os.path.exists(DEFAULT_CONFIG_FILE):
+        args.config = DEFAULT_CONFIG_FILE
+
     if args.config:
         config = ConfigParser.SafeConfigParser()
         config.read(args.config)
