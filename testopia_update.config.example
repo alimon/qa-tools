@@ -1,4 +1,4 @@
 [Testopia]
-host = 127.0.0.1
+url = https://127.0.0.1/xmlrpc.cgi
 username = someuser
-passsword = verysecurepass
+password = verysecurepass

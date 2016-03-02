@@ -4,6 +4,7 @@ import sys
 import argparse
 import logging
 import ConfigParser
+import types
 
 from external.testopia import Testopia
 
@@ -18,7 +19,6 @@ class ArgumentsHandler(object):
         self.config = config
 
     def list_products(self):
-        print "HERE"
         pass
 
 def get_args():
@@ -26,7 +26,7 @@ def get_args():
 
     parser.add_argument('--config', dest="config", required=False,
         help='Configuration file.')
-    parser.add_argument('--host', dest="host", required=False,
+    parser.add_argument('--url', dest="url", required=False,
         help='URL of Testopia instance.')
     parser.add_argument('--username', dest="username", required=False,
         help='Username of Testopia instance.')
@@ -35,6 +35,7 @@ def get_args():
 
     parser.add_argument('--list-products', required=False, action="store_true",
         dest="list_products", default=False, help='List available products.')
+
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
     parser.add_argument('--debug', required=False, action="store_true",
@@ -56,7 +57,7 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     config = None
-    testopia_opts = ['host', 'username', 'password']
+    testopia_opts = ['url', 'username', 'password']
     if args.config:
         config = ConfigParser.SafeConfigParser()
         config.read(args.config)
@@ -68,9 +69,15 @@ if __name__ == '__main__':
             arg = getattr(args, to)
             if arg:
                 setattr(opts, to, arg)
+        if not hasattr(opts, to):
+            logger.error("%s: Requires testopia %s in arguments or config." % \
+                (sys.argv[0], to))
+            sys.exit(1)
 
-    args_handler = ArgumentsHandler(None, opts, logger, config)
+    testopia = Testopia(opts.username, opts.password, opts.url, sslverify=False)
+    args_handler = ArgumentsHandler(testopia, opts, logger, config)
     for arg in vars(args):
         if getattr(args, arg):
             m = getattr(args_handler, arg)
-            m()
+            if type(m) == types.MethodType:
+                m()
