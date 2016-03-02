@@ -1,0 +1,4 @@
+[Testopia]
+host = 127.0.0.1
+username = someuser
+passsword = verysecurepass
