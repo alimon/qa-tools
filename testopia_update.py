@@ -8,21 +8,12 @@ import ConfigParser
 import types
 
 from external.testopia import Testopia
+from testopia_update.product import get_products, get_product_class
 
 DEFAULT_CONFIG_FILE = "testopia_update.config"
 
 class Options(object):
     pass
-
-class ArgumentsHandler(object):
-    def __init__(self, testopia, opts, logger, config):
-        self.testopia = testopia
-        self.logger = logger
-        self.opts = opts
-        self.config = config
-
-    def list_products(self):
-        pass
 
 def get_args():
     parser = argparse.ArgumentParser(description="Update testopia script.")
@@ -38,6 +29,12 @@ def get_args():
 
     parser.add_argument('--list-products', required=False, action="store_true",
         dest="list_products", default=False, help='List available products.')
+
+    parser.add_argument('-a', '--action', required=False, dest='action',
+        choices=['create', 'update'],
+        help='Action to execute can be create or update.')
+    parser.add_argument('-p', '--product', required=False,
+        dest="product_name", help='Product to create or update.')
 
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
@@ -59,7 +56,8 @@ if __name__ == '__main__':
         logging.basicConfig(stream=sys.stderr)
     logger = logging.getLogger()
 
-    testopia_opts = ['url', 'username', 'password']
+    testopia_opts = ['url', 'username', 'password',
+            'action', 'product_name']
 
     config = None
     if not args.config and os.path.exists(DEFAULT_CONFIG_FILE):
@@ -82,9 +80,22 @@ if __name__ == '__main__':
             sys.exit(1)
 
     testopia = Testopia(opts.username, opts.password, opts.url, sslverify=False)
-    args_handler = ArgumentsHandler(testopia, opts, logger, config)
-    for arg in vars(args):
-        if getattr(args, arg):
-            m = getattr(args_handler, arg)
-            if type(m) == types.MethodType:
-                m()
+    products = get_products(testopia, opts, logger, config)
+
+    if args.list_products:
+        print("List of available products: \n")
+        for p in products:
+            print("%s\n" % p.name)
+        sys.exit(0)
+
+    if not (args.action and args.product_name):
+        logger.error("%s: Requires action and product to be specified." % \
+            (sys.argv[0]))
+        sys.exit(1)
+
+    product = get_product_class(args.product_name, products)
+    if not product:
+        logger.error("%s: Product %s isn't supported, use --list-products for "\
+            "list available products." % \
+            (sys.argv[0], args.product_name))
+        sys.exit(1)
