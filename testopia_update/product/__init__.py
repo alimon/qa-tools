@@ -10,6 +10,22 @@ class Product(object):
             return True
         return False
 
+    def get_test_plan(self, branch_name):
+        tp = None
+
+        tp_name = '%s: %s branch' % (self.name, branch_name)
+
+        tp = self.testopia.testplan_list(name=tp_name)
+        if not tp:
+            tp_alt_name = '%s: %s branch' % (self.name, branch_name.lower())
+            tp = self.testopia.testplan_list(name=tp_alt_name)
+
+        if tp:
+            return tp[0]
+
+        return tp
+
+
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu
 

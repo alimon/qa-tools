@@ -13,6 +13,9 @@ from testopia_update.product import get_products, get_product_class
 DEFAULT_CONFIG_FILE = "testopia_update.config"
 DEFAULT_STORE_LOCATION = "/tmp/testopia_update"
 
+ACTIONS = ('create', 'update')
+BRANCHES = ('master', 'jethro', 'dizzy', 'daisy', 'noexists')
+
 class Options(object):
     pass
 
@@ -32,10 +35,13 @@ def get_args():
         dest="list_products", default=False, help='List available products.')
 
     parser.add_argument('-a', '--action', required=False, dest='action',
-        choices=['create', 'update'],
+        choices=ACTIONS,
         help='Action to execute can be create or update.')
     parser.add_argument('-p', '--product', required=False,
         dest="product_name", help='Product to create or update.')
+    parser.add_argument('-b', '--branch', required=False,
+        choices=BRANCHES,
+        dest="branch_name", help='Branch for create or update.')
 
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
@@ -92,8 +98,8 @@ if __name__ == '__main__':
             print("%s\n" % p.name)
         sys.exit(0)
 
-    if not (args.action and args.product_name):
-        logger.error("%s: Requires action and product to be specified." % \
+    if not (args.action and args.product_name and args.branch_name):
+        logger.error("%s: Requires action, product and branch to be specified." % \
             (sys.argv[0]))
         sys.exit(1)
 
@@ -102,4 +108,11 @@ if __name__ == '__main__':
         logger.error("%s: Product %s isn't supported, use --list-products for "\
             "list available products." % \
             (sys.argv[0], args.product_name))
+        sys.exit(1)
+
+    test_plan = product.get_test_plan(args.branch_name)
+    if not test_plan:
+        logger.error("%s: Test plan for product %s and branch %s not exists."\
+             % (sys.argv[0], args.product_name, args.branch_name))
+
         sys.exit(1)
