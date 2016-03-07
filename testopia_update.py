@@ -11,6 +11,7 @@ from external.testopia import Testopia
 from testopia_update.product import get_products, get_product_class
 
 DEFAULT_CONFIG_FILE = "testopia_update.config"
+DEFAULT_STORE_LOCATION = "/tmp/testopia_update"
 
 class Options(object):
     pass
@@ -56,9 +57,9 @@ if __name__ == '__main__':
         logging.basicConfig(stream=sys.stderr)
     logger = logging.getLogger()
 
-    testopia_opts = ['url', 'username', 'password',
-            'action', 'product_name']
-
+    testopia_config = ['url', 'username', 'password', 'store_location']
+    testopia_opts = testopia_config + ['action', 'product_name']
+ 
     config = None
     if not args.config and os.path.exists(DEFAULT_CONFIG_FILE):
         args.config = DEFAULT_CONFIG_FILE
@@ -67,7 +68,7 @@ if __name__ == '__main__':
         config = ConfigParser.SafeConfigParser()
         config.read(args.config)
 
-        for to in testopia_opts:
+        for to in testopia_config:
             setattr(opts, to, config.get("Testopia", to))
     for to in testopia_opts:
         if to in vars(args):
@@ -78,6 +79,9 @@ if __name__ == '__main__':
             logger.error("%s: Requires testopia %s in arguments or config." % \
                 (sys.argv[0], to))
             sys.exit(1)
+
+    if not os.path.exists(opts.store_location):
+        os.makedirs(opts.store_location)
 
     testopia = Testopia(opts.username, opts.password, opts.url, sslverify=False)
     products = get_products(testopia, opts, logger, config)

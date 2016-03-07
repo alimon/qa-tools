@@ -2,3 +2,4 @@
 url = https://127.0.0.1/xmlrpc.cgi
 username = someuser
 password = verysecurepass
+store_location = /tmp/testopia_update
