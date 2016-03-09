@@ -25,6 +25,17 @@ class Product(object):
 
         return tp
 
+    def get_environment(self, tp, env_name):
+        tp_envs = self.testopia.product_get_environments(tp['product_id'])
+        for tp_env in tp_envs:
+            if env_name == tp_env['name']:
+                return tp_env
+        return None
+
+    def get_environment_names(self, tp):
+        tp_envs = self.testopia.product_get_environments(tp['product_id'])
+        return [tp_env['name'] for tp_env in tp_envs]
+
 
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu

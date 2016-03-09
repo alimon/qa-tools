@@ -42,6 +42,8 @@ def get_args():
     parser.add_argument('-b', '--branch', required=False,
         choices=BRANCHES,
         dest="branch_name", help='Branch for create or update.')
+    parser.add_argument('-e', '--environment', required=False,
+        dest="env_name", help='Enviroment for create or update.')
 
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
@@ -98,10 +100,11 @@ if __name__ == '__main__':
             print("%s\n" % p.name)
         sys.exit(0)
 
-    if not (args.action and args.product_name and args.branch_name):
-        logger.error("%s: Requires action, product and branch to be specified." % \
-            (sys.argv[0]))
-        sys.exit(1)
+    params = ['action', 'product_name', 'branch_name', 'env_name']
+    for p in params:
+        if not getattr(args, p):
+            logger.error("%s: Requires %s to be specified." % (sys.argv[0], p))
+            sys.exit(1)
 
     product = get_product_class(args.product_name, products)
     if not product:
@@ -115,4 +118,13 @@ if __name__ == '__main__':
         logger.error("%s: Test plan for product %s and branch %s not exists."\
              % (sys.argv[0], args.product_name, args.branch_name))
 
+        sys.exit(1)
+
+    env = product.get_environment(test_plan, args.env_name)
+    if not env:
+        logger.error("%s: Test plan for product %s have invalid environment %s."\
+             % (sys.argv[0], args.product_name, args.env_name))
+        logger.error("Available environments are:")
+        for env_name in product.get_environment_names(test_plan):
+            logger.error(env_name)
         sys.exit(1)
