@@ -45,6 +45,15 @@ def get_args():
     parser.add_argument('-e', '--environment', required=False,
         dest="env_name", help='Enviroment for create or update.')
 
+    parser.add_argument('--project-version', required=False,
+        dest="project_version", help='Version of the project.')
+    parser.add_argument('--project-milestone', required=False,
+        dest="project_milestone", help='Milestone of the project.')
+    parser.add_argument('--project-revision', required=False,
+        dest="project_revision", help='SCM Revision of the project.')
+    parser.add_argument('--project-date', required=False,
+        dest="project_date", help='SCM version/revision date of the project.')
+
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
     parser.add_argument('--debug', required=False, action="store_true",
@@ -66,7 +75,9 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     testopia_config = ['url', 'username', 'password', 'store_location']
-    testopia_opts = testopia_config + ['action', 'product_name']
+    testopia_opts = testopia_config + ['action', 'product_name',
+        'project_version', 'project_milestone', 'project_revision',
+        'project_date']
  
     config = None
     if not args.config and os.path.exists(DEFAULT_CONFIG_FILE):
@@ -122,9 +133,27 @@ if __name__ == '__main__':
 
     env = product.get_environment(test_plan, args.env_name)
     if not env:
-        logger.error("%s: Test plan for product %s have invalid environment %s."\
+        logger.error("%s: Product %s have invalid environment %s."\
              % (sys.argv[0], args.product_name, args.env_name))
         logger.error("Available environments are:")
         for env_name in product.get_environment_names(test_plan):
             logger.error(env_name)
         sys.exit(1)
+
+    build = product.get_build(test_plan, args.project_version,
+        args.project_milestone, args.project_revision, args.project_date)
+    if not build:
+        if args.action == "create":
+            build = product.create_build(test_plan, args.project_version,
+                args.project_milestone, args.project_revision, args.project_date)
+            logger.info("%s: Create build for product %s with: "\
+                "%s, %s, %s, %s." % (sys.argv[0], args.product_name,
+                args.project_version, args.project_milestone,
+                args.project_revision, args.project_date))
+        else:
+            logger.error("%s: Product %s can't find build with: "\
+                "%s, %s, %s, %s." % (sys.argv[0], args.product_name,
+                args.project_version, args.project_milestone,
+                args.project_revision, args.project_date))
+            sys.exit(1)
+    print build
