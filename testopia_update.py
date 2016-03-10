@@ -15,6 +15,7 @@ DEFAULT_STORE_LOCATION = "/tmp/testopia_update"
 
 ACTIONS = ('create', 'update')
 BRANCHES = ('master', 'jethro', 'dizzy', 'daisy', 'noexists')
+CATEGORIES = ('Full pass', 'Weekly')
 
 class Options(object):
     pass
@@ -39,6 +40,9 @@ def get_args():
         help='Action to execute can be create or update.')
     parser.add_argument('-p', '--product', required=False,
         dest="product_name", help='Product to create or update.')
+    parser.add_argument('-c', '--category', required=False,
+        choices=CATEGORIES,
+        dest="category_name", help='Category for create or update.')
     parser.add_argument('-b', '--branch', required=False,
         choices=BRANCHES,
         dest="branch_name", help='Branch for create or update.')
@@ -75,7 +79,7 @@ if __name__ == '__main__':
     logger = logging.getLogger()
 
     testopia_config = ['url', 'username', 'password', 'store_location']
-    testopia_opts = testopia_config + ['action', 'product_name',
+    testopia_opts = testopia_config + ['action', 'product_name', 'category_name',
         'project_version', 'project_milestone', 'project_revision',
         'project_date']
  
@@ -161,4 +165,3 @@ if __name__ == '__main__':
                 args.project_version, args.project_milestone,
                 args.project_revision, args.project_date))
             sys.exit(1)
-    print build
