@@ -32,6 +32,10 @@ class Product(object):
                 return tp_env
         return None
 
+    def create_environment(self, tp, env_name):
+        return self.testopia.environment_create(tp['product_id'], True,
+                name=env_name)
+
     def get_environment_names(self, tp):
         tp_envs = self.testopia.product_get_environments(tp['product_id'])
         return [tp_env['name'] for tp_env in tp_envs]

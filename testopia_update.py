@@ -133,12 +133,17 @@ if __name__ == '__main__':
 
     env = product.get_environment(test_plan, args.env_name)
     if not env:
-        logger.error("%s: Product %s have invalid environment %s."\
-             % (sys.argv[0], args.product_name, args.env_name))
-        logger.error("Available environments are:")
-        for env_name in product.get_environment_names(test_plan):
-            logger.error(env_name)
-        sys.exit(1)
+        if args.action == "create":
+            env = product.create_environment(test_plan, args.env_name)
+            logger.info("%s: Create environment %s for product %s."\
+                % (sys.argv[0], args.env_name, args.product_name))
+        else:
+            logger.error("%s: Product %s have invalid environment %s."\
+                 % (sys.argv[0], args.product_name, args.env_name))
+            logger.error("Available environments are:")
+            for env_name in product.get_environment_names(test_plan):
+                logger.error(env_name)
+            sys.exit(1)
 
     build = product.get_build(test_plan, args.project_version,
         args.project_milestone, args.project_revision, args.project_date)
