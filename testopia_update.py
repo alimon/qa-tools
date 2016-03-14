@@ -48,6 +48,8 @@ def get_args():
         dest="branch_name", help='Branch for create or update.')
     parser.add_argument('-e', '--environment', required=False,
         dest="env_name", help='Enviroment for create or update.')
+    parser.add_argument('-o', '--optional', required=False,
+        dest="optional", help='Optional parameter for get Test runs.')
 
     parser.add_argument('--project-version', required=False,
         dest="project_version", help='Version of the project.')
