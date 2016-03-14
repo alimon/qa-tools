@@ -167,3 +167,15 @@ if __name__ == '__main__':
                 args.project_version, args.project_milestone,
                 args.project_revision, args.project_date))
             sys.exit(1)
+
+    if args.action == "create":
+        test_run = product.get_template_test_run(test_plan, args.project_version,
+                args.category_name, args.optional)
+        if not test_run:
+            logger.error("%s: Product %s can't find test run with: "\
+                "%s, %s, %s." % (sys.argv[0], args.product_name,
+                args.project_version, args.category_name, args.optional))
+            sys.exit(1)
+
+    elif args.action == "update":
+        pass

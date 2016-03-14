@@ -61,6 +61,41 @@ class Product(object):
                 description=project_date, milestone=project_milestone,
                 isactive=True)
 
+    def _get_test_run_summary_alternatives(self, project_version,
+            category_name, optional):
+        summary_alts = []
+        summary_alts.append('TEMPLATE - %s - %s - %s' % (self.name,
+            project_version, category_name))
+        summary_alts.append('TEMPLATE - %s - %s' % (project_version,
+            category_name))
+        summary_alts.append('TEMPLATE - %s' % (category_name))
+        if optional: 
+            for idx, sa in enumerate(summary_alts):
+                summary_alts[idx] = sa + " - %s" % optional
+        return summary_alts
+
+    def get_template_test_run(self, tp, project_version, category_name,
+            optional):
+        """
+            Discover the template for create the new test runs.
+
+            First get summary alternative names and then search for the
+            first match of summary in test runs.
+        """
+
+        summary_alts = self._get_test_run_summary_alternatives(project_version,
+            category_name, optional)
+        tp_test_runs = self.testopia.testplan_get_test_runs(tp['plan_id'])
+
+        test_run = None
+        for sa in summary_alts:
+            for tr in tp_test_runs:
+                if sa == tr['summary']:
+                    test_run = tr
+                    break
+
+        return test_run
+
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu
 
