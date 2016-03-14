@@ -169,13 +169,23 @@ if __name__ == '__main__':
             sys.exit(1)
 
     if args.action == "create":
-        test_run = product.get_template_test_run(test_plan, args.project_version,
+        template_test_run = product.get_template_test_run(test_plan, args.project_version,
                 args.category_name, args.optional)
-        if not test_run:
+        if not template_test_run:
             logger.error("%s: Product %s can't find test run with: "\
                 "%s, %s, %s." % (sys.argv[0], args.product_name,
                 args.project_version, args.category_name, args.optional))
             sys.exit(1)
 
+        test_run = product.create_test_run(test_plan, env, build,
+                template_test_run, args.project_version, args.project_date)
+        if not test_run:
+            logger.error("%s: Product %s can't create test run with: "\
+                "%s, %s, %s, %s." % (sys.argv[0], args.product_name,
+                args.project_version, args.project_date, args.category_name,
+                args.optional))
+            sys.exit(1)
+        logger.info("%s: Test run was created with Summary (%s) and ID (%s)." \
+                % (sys.argv[0], test_run['summary'], test_run['run_id']))
     elif args.action == "update":
         pass

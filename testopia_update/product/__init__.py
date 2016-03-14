@@ -1,3 +1,5 @@
+import re
+
 class Product(object):
     def __init__(self, testopia, opts, logger, config):
         self.testopia = testopia
@@ -95,6 +97,36 @@ class Product(object):
                     break
 
         return test_run
+
+    def _get_test_case_ids(self, tr):
+        return [tc['case_id'] for tc in \
+                self.testopia.testrun_get_test_cases(tr['run_id'])]
+
+    def _canonicalize_project_version(self, project_version):
+        """
+            Only conserve the version part of the Project remove Milestones.
+        """
+
+        regex = "^(?P<version>(\d+\.)?(\d+\.)?(\*|\d+)).*$"
+        if hasattr(self, 'project_version_regex'):
+            regex = getattr(self, 'project_version_regex')
+
+        m = re.search(regex, project_version)
+        if m:
+            return m.group('version')
+
+        return project_version
+
+    def create_test_run(self, tp, env, build, template_tr, project_version, project_date):
+        summary = template_tr['summary'].replace('TEMPLATE', project_date)
+
+        test_case_ids = self._get_test_case_ids(template_tr)
+        new_test_run = self.testopia.testrun_create(build['build_id'],
+            env['environment_id'], tp['plan_id'], summary, self.testopia.userId,
+            product_version=self._canonicalize_project_version(project_version))
+        self.testopia.testrun_add_cases(test_case_ids, new_test_run['run_id'])
+
+        return new_test_run
 
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu

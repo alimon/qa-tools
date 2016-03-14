@@ -1539,6 +1539,8 @@ class Testopia(object):
         """
         return self.do_command("TestRun.get_test_cases", [self._number_noop(run_id)])
 
+    def testrun_add_cases(self, case_ids, run_id):
+        return self.do_command("TestRun.add_cases", [case_ids, self._number_noop(run_id)])
 
     def testrun_get_test_case_runs(self, run_id):
         """Get A List of TestCase Runs For An Existing Test Run.
