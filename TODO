@@ -1,0 +1,8 @@
+Testopia WEB,
+
+	- Define a standard for project version or take the current one.
+	- Define a standard format for Templates, i.e.:
+	  TEMPLATE - [Component] - [ProjectVersion] - <Fullpass, Weekly> - [Image,Distro]
+	  TEMPLATE - [ProjectVersion] - <Fullpass, Weekly> - [Image,Distro]
+	  TEMPLATE - <Fullpass, Weekly> - [Image,Distro]
+
