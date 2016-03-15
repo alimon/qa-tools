@@ -144,6 +144,23 @@ class Product(object):
 
         return new_test_run
 
+    def parse_results_log(self, log_file):
+        regex = "^.*RESULTS.*(?P<case_id>\d+): (?P<status>PASSED|FAILED)$"
+        if hasattr(self, 'results_regex'):
+            regex = getattr(self, 'results_regex')
+
+        regex_comp = re.compile(regex)
+
+        results = {}
+        with open(log_file, "r") as f:
+            for line in f:
+                m = regex_comp.search(line)
+                if m:
+                    results[int(m.group('case_id'))] = m.group('status')
+
+        return results
+
+
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu
     from . import toaster
