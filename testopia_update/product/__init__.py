@@ -51,7 +51,7 @@ class Product(object):
         build_name = self._format_build_name(project_version, project_revision)
         for b in builds:
             if build_name == b['name'] and project_date == b['description'] \
-                    and project_milestone == b['milestone']:
+                    and project_milestone == str(b['milestone']):
                 return b
         return None
 
