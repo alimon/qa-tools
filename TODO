@@ -6,3 +6,7 @@ Testopia WEB,
 	  TEMPLATE - [ProjectVersion] - <Fullpass, Weekly> - [Image,Distro]
 	  TEMPLATE - <Fullpass, Weekly> - [Image,Distro]
 
+Testopia update,
+
+	- Handle duplicity of test runs, for now only notice the user.
+
