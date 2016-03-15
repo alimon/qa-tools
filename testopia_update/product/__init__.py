@@ -48,7 +48,7 @@ class Product(object):
     def get_build(self, tp, project_version, project_milestone,
             project_revision, project_date):
         builds = self.testopia.product_get_builds(tp['product_id'])
-        build_name = self._format_build_name(project_version, project_revision)
+        build_name = self._format_build_name(project_milestone, project_revision)
         for b in builds:
             if build_name == b['name'] and project_date == b['description'] \
                     and project_milestone == str(b['milestone']):
@@ -57,7 +57,7 @@ class Product(object):
 
     def create_build(self, tp, project_version, project_milestone,
             project_revision, project_date):
-        build_name = self._format_build_name(project_version, project_revision)
+        build_name = self._format_build_name(project_milestone, project_revision)
 
         return self.testopia.build_create(build_name, tp['product_id'],
                 description=project_date, milestone=project_milestone,
@@ -139,7 +139,7 @@ class Product(object):
         test_case_ids = self._get_test_case_ids(template_tr)
         new_test_run = self.testopia.testrun_create(build['build_id'],
             env['environment_id'], tp['plan_id'], summary, self.testopia.userId,
-            product_version=self._canonicalize_project_version(project_version))
+            product_version=project_version)
         self.testopia.testrun_add_cases(test_case_ids, new_test_run['run_id'])
 
         return new_test_run
@@ -160,6 +160,29 @@ class Product(object):
 
         return results
 
+    def _get_status_id(self, status):
+        if 'PASS' in status:
+            return 2
+        elif 'FAIL' in status:
+            return 3
+        else:
+            return 0
+
+    def update_test_run(self, env, build, tr, results):
+        missing = []
+
+        test_case_ids = self._get_test_case_ids(tr)
+        for tcid in test_case_ids:
+            if tcid in results:
+                status_id = self._get_status_id(results[tcid])
+                self.testopia.testcaserun_update(tr['run_id'], tcid,
+                        build['build_id'], env['environment_id'],
+                        case_run_status_id=status_id)
+                continue
+
+            missing.append(tcid)
+
+        return missing
 
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu
