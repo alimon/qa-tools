@@ -63,14 +63,14 @@ class Product(object):
                 description=project_date, milestone=project_milestone,
                 isactive=True)
 
-    def _get_test_run_summary_alternatives(self, project_version,
+    def _get_test_run_summary_alternatives(self, ttype, project_version,
             category_name, optional):
         summary_alts = []
-        summary_alts.append('TEMPLATE - %s - %s - %s' % (self.name,
+        summary_alts.append('%s - %s - %s - %s' % (ttype, self.name,
             project_version, category_name))
-        summary_alts.append('TEMPLATE - %s - %s' % (project_version,
+        summary_alts.append('%s - %s - %s' % (ttype, project_version,
             category_name))
-        summary_alts.append('TEMPLATE - %s' % (category_name))
+        summary_alts.append('%s - %s' % (ttype, category_name))
         if optional: 
             for idx, sa in enumerate(summary_alts):
                 summary_alts[idx] = sa + " - %s" % optional
@@ -85,14 +85,30 @@ class Product(object):
             first match of summary in test runs.
         """
 
-        summary_alts = self._get_test_run_summary_alternatives(project_version,
-            category_name, optional)
+        summary_alts = self._get_test_run_summary_alternatives("TEMPLATE", 
+            project_version, category_name, optional)
         tp_test_runs = self.testopia.testplan_get_test_runs(tp['plan_id'])
 
         test_run = None
         for sa in summary_alts:
             for tr in tp_test_runs:
                 if sa == tr['summary']:
+                    test_run = tr
+                    break
+
+        return test_run
+
+    def get_test_run(self, tp, env, build, project_date, project_version,
+            category_name, optional):
+        summary_alts = self._get_test_run_summary_alternatives(project_date, 
+            project_version, category_name, optional)
+        tp_test_runs = self.testopia.testplan_get_test_runs(tp['plan_id'])
+
+        test_run = None
+        for sa in summary_alts:
+            for tr in tp_test_runs:
+                if sa == tr['summary'] and build['build_id'] == tr['build_id'] \
+                        and env['environment_id'] == tr['environment_id']:
                     test_run = tr
                     break
 

@@ -188,4 +188,11 @@ if __name__ == '__main__':
         logger.info("%s: Test run was created with Summary (%s) and ID (%s)." \
                 % (sys.argv[0], test_run['summary'], test_run['run_id']))
     elif args.action == "update":
-        pass
+        test_run = product.get_test_run(test_plan, env, build, args.project_date,
+                args.project_version, args.category_name, args.optional)
+        if not test_run:
+            logger.error("%s: Product %s can't find test run with: "\
+                "%s, %s, %s, %s." % (sys.argv[0], args.product_name,
+                args.project_date, args.project_version, args.category_name,
+                args.optional))
+            sys.exit(1)
