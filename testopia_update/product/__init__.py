@@ -146,10 +146,12 @@ class Product(object):
 
 def get_products(testopia, opts, config, logger):
     from . import bsp_qemu
+    from . import toaster
 
     products = []
 
     products.append(bsp_qemu.BSPQEMUProduct(testopia, opts, logger, config))
+    products.append(toaster.ToasterProduct(testopia, opts, logger, config))
 
     return products
 
