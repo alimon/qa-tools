@@ -60,6 +60,9 @@ def get_args():
     parser.add_argument('--project-date', required=False,
         dest="project_date", help='SCM version/revision date of the project.')
 
+    parser.add_argument('--results-log', required=False,
+        dest="results_log", help='Results log.')
+
     parser.add_argument('--verbose', required=False, action="store_true",
         dest="verbose", default=False, help='Enable verbose mode.')
     parser.add_argument('--debug', required=False, action="store_true",
@@ -185,9 +188,20 @@ if __name__ == '__main__':
                 args.project_version, args.project_date, args.category_name,
                 args.optional))
             sys.exit(1)
-        logger.info("%s: Test run was created with Summary (%s) and ID (%s)." \
-                % (sys.argv[0], test_run['summary'], test_run['run_id']))
+        logger.info("%s: Test run was created with Template (%d), Summary (%s)"\
+                " and ID (%s)." % (sys.argv[0], template_test_run['run_id'], 
+                test_run['summary'], test_run['run_id']))
     elif args.action == "update":
+        if not args.results_log:
+            logger.error("%s: For update --results-log needs to be specified." \
+                % (sys.argv[0]))
+            sys.exit(1)
+        if not os.path.exists(args.results_log):
+            logger.error("%s: Results log (%s) don't exists." \
+                % (sys.argv[0], args.results_log))
+            sys.exit(1)
+
+        results = product.parse_results_log(args.results_log)
         test_run = product.get_test_run(test_plan, env, build, args.project_date,
                 args.project_version, args.category_name, args.optional)
         if not test_run:
@@ -196,3 +210,9 @@ if __name__ == '__main__':
                 args.project_date, args.project_version, args.category_name,
                 args.optional))
             sys.exit(1)
+
+        missing = product.update_test_run(env, build, test_run, results)
+        for tcid in missing:
+            logger.warn("%s: Product %s, Test run %d, Case %d wasn't updated" %\
+                    (sys.argv[0], args.product_name, test_run['run_id'], tcid))
+    sys.exit(0)
